@@ -25,7 +25,25 @@ app.get("*", (req, res) =>
 
 //API routes//
 //GET /api/notes to read the db.json file and return all saved notes
+var notes = JSON.parse(data);
+//use fs file to be persistent data
+app.get("/api/notes", (req, res) => {
+  fs.readFile("db/db.json", "utf8", (err, data) => {
+    if (err) throw err;
+  });
+});
+
 //POST /api/notes to receive a new note, save, and add it to db.json
+app.post("/api/notes", (req, res) => {
+  //receive new note
+  let newNote = req.body;
+  // add new note
+  notes.push(newNote);
+  //update db.json
+  updateDb();
+  console.log("Added a note.");
+  if (err) throw err;
+});
 
 //start and listen to server
 app.listen(PORT, () => console.log(`App listening on PORT ${PORT}`));
