@@ -6,14 +6,53 @@ const path = require("path");
 // $ npm i -S unique-names-generator
 //initialize express
 const app = express();
-const PORT = 3000;
-
+const PORT = process.env.PORT || 3000;
+// access to data to be parsed
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 //front end to have access to the public folder for the notes.html
-app.use(express.static("public"));
-// HTML routes
-//GET /notes to retunr the notes.html
+app.use(express.static(__dirname + "/public"));
+app.use(express.static(__dirname + "/db"));
+
+//note variables
+let notes;
+
+//API routes//
+// use fs file to be persistent data
+// get requests
+
+app.get("/api/notes", function (req, res) {
+  // read the db.json file and return all saved notes
+  let pt = path.join(__dirname, "./db/db.json");
+  fs.readFile(path.join(__dirname, "./db/db.json"), function (err, data) {
+    res.json(JSON.parse(data));
+    if (err) throw err;
+  });
+});
+///post requests
+app.post("/api/notes", function (req, res) {
+  var newNote = req.body;
+  //read json file and parse into data//
+  fs.readFile("./db/db.json", function (err, data) {
+    if (err) throw err;
+    var notes = JSON.parse(data);
+    //push into db.json as new note
+    notes.push(newNote);
+    //create id for each note
+    notes.forEach(function (item, i) {
+      item.id = 1 + i;
+    });
+    //change note back into string
+    fs.writeFile("./db/db.json", JSON.stringify(notes), function (err) {
+      if (err) throw err;
+    });
+  });
+  //response is new note
+  res.json(newNote);
+});
+
+// HTML routes //
+//GET /notes to retunn the notes.html
 //GET * to return the index.html
 app.get("/notes", (req, res) =>
   res.sendFile(path.join(__dirname, "./public/notes.html"))
@@ -23,27 +62,12 @@ app.get("*", (req, res) =>
   res.sendFile(path.join(__dirname, "./public/index.html"))
 );
 
-//API routes//
-//GET /api/notes to read the db.json file and return all saved notes
-var notes = JSON.parse(data);
-//use fs file to be persistent data
-app.get("/api/notes", (req, res) => {
-  fs.readFile("db/db.json", "utf8", (err, data) => {
+function updateDB() {
+  fs.writeFile("./db/db.json", JSON.stringify(notes, "\t"), (err) => {
     if (err) throw err;
+    return true;
   });
-});
-
-//POST /api/notes to receive a new note, save, and add it to db.json
-app.post("/api/notes", (req, res) => {
-  //receive new note
-  let newNote = req.body;
-  // add new note
-  notes.push(newNote);
-  //update db.json
-  updateDb();
-  console.log("Added a note.");
-  if (err) throw err;
-});
+}
 
 //start and listen to server
 app.listen(PORT, () => console.log(`App listening on PORT ${PORT}`));
